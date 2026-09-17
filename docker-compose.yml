@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kairos}
       POSTGRES_DB: ${POSTGRES_DB:-kairos}
     ports:
-      - "5433:5432"          # 5433 on the host: a local Postgres may already own 5432
+      - "${KAIROS_PG_PORT:-5434}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infra/init-mlflow-db.sh:/docker-entrypoint-initdb.d/init-mlflow-db.sh:ro
@@ -28,7 +28,7 @@ services:
       --default-artifact-root /mlartifacts
       --serve-artifacts
     ports:
-      - "5001:5000"          # 5000 on the host is AirPlay Receiver on macOS
+      - "${KAIROS_MLFLOW_PORT:-5001}:5000"
     volumes:
       - mlartifacts:/mlartifacts
     depends_on:
@@ -54,7 +54,7 @@ services:
       POSTGRES_PORT: 5432
       MLFLOW_TRACKING_URI: http://mlflow:5000
     ports:
-      - "8000:8000"
+      - "${KAIROS_API_PORT:-8010}:8000"
     volumes:
       - ./backend:/app       # hot reload; uvicorn --reload watches the bind mount
       - ./data:/data
@@ -73,7 +73,7 @@ services:
     environment:
       VITE_API_PROXY: http://api:8000
     ports:
-      - "5173:5173"
+      - "${KAIROS_WEB_PORT:-5173}:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules    # keep the image's node_modules, not the host's

@@ -25,10 +25,14 @@ make health              # should print {"status":"ok",...}
 | Service | URL |
 |---|---|
 | Web | http://localhost:5173 |
-| API | http://localhost:8000/api/health |
-| API docs | http://localhost:8000/docs |
+| API | http://localhost:8010/api/health |
+| API docs | http://localhost:8010/docs |
 | MLflow | http://localhost:5001 |
-| Postgres | `localhost:5433` |
+| Postgres | `localhost:5434` |
+
+Host ports are overridable in `.env` (`KAIROS_API_PORT`, `KAIROS_WEB_PORT`,
+`KAIROS_PG_PORT`, `KAIROS_MLFLOW_PORT`) for when a venue laptop already has
+something on one of them.
 
 `make down` stops everything, `make nuke` also drops the volumes.
 
