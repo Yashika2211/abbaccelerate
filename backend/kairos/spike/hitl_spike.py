@@ -13,6 +13,15 @@ If the Postgres checkpointer misbehaves we fall back to MemorySaver and say so i
 the payload, rather than losing the human-in-the-loop demo beat entirely.
 
 Delete this module once agent/graph.py carries the real thing.
+
+PROVEN on this machine: checkpointer reports "postgres" (not the fallback), the
+graph parks with next=["human_checkpoint"], a separate HTTP request resumes it
+from checkpointed state, and the operator's *edit* survives into the result.
+
+FINDING for Phase 4: on resume, LangGraph re-executes the interrupted node from
+the top, so anything published before the interrupt() call fires a second time.
+The real graph must publish "awaiting approval" from the driver rather than from
+inside the node, or the run timeline will show the checkpoint twice.
 """
 
 from __future__ import annotations
