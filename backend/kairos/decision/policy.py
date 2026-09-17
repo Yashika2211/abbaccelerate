@@ -27,9 +27,12 @@ from kairos.decision.cost import (
     rul_lead_time_sweep,
 )
 
-#: Thresholds this close to the ends mean the economics, not the model, are deciding.
-DEGENERATE_LOW = 0.02
-DEGENERATE_HIGH = 0.98
+#: How far the empirical optimum may sit from the closed-form Bayes threshold
+#: before we suspect the probabilities are miscalibrated rather than the economics
+#: being unusual. Scaled by the Bayes threshold because an absolute gap means
+#: something very different at 0.01 than it does at 0.5.
+CALIBRATION_GAP_ABS = 0.05
+CALIBRATION_GAP_REL = 3.0
 
 #: Resolution of the plotted cost curve. Data-derived thresholds are added on top,
 #: so the argmin is exact even though the curve is drawn on an even grid.
@@ -75,6 +78,8 @@ class ThresholdDecision:
     degenerate: bool
     degenerate_reason: str | None
     plateau_fraction: float = 0.0     # share of the sweep sitting at minimum cost
+    bayes_threshold: float = 0.0      # closed-form optimum, for comparison
+    calibration_warning: str | None = None
 
     @property
     def savings_vs_naive(self) -> float:
@@ -90,6 +95,8 @@ class ThresholdDecision:
             "degenerate": self.degenerate,
             "degenerate_reason": self.degenerate_reason,
             "plateau_fraction": self.plateau_fraction,
+            "bayes_threshold": self.bayes_threshold,
+            "calibration_warning": self.calibration_warning,
             "curve": [p.as_dict() for p in self.curve],
         }
 
@@ -198,6 +205,8 @@ def optimal_threshold(
         degenerate=degenerate,
         degenerate_reason=reason,
         plateau_fraction=_plateau_fraction(curve),
+        bayes_threshold=cfg.bayes_threshold,
+        calibration_warning=_calibration_warning(best.threshold, cfg),
     )
 
 
@@ -235,17 +244,6 @@ def _diagnose_degeneracy(
             f"{cfg.consequence_ratio:,.0f}:1, a blanket inspection policy is already optimal "
             f"and the model changes nothing."
         )
-    if best.threshold <= DEGENERATE_LOW:
-        return True, (
-            f"Cost-optimal threshold is {best.threshold:.3f} — effectively alert-on-everything. "
-            f"At a consequence ratio of {cfg.consequence_ratio:,.0f}:1 the economics, not the "
-            f"model, are making this decision."
-        )
-    if best.threshold >= DEGENERATE_HIGH:
-        return True, (
-            f"Cost-optimal threshold is {best.threshold:.3f} — effectively never-alert. Acting "
-            f"is barely cheaper than failing at these costs."
-        )
     spread = max(p.total_cost for p in curve) - min(p.total_cost for p in curve)
     if spread <= 0:
         return True, (
@@ -253,6 +251,32 @@ def _diagnose_degeneracy(
             "to the model's output."
         )
     return False, None
+
+
+def _calibration_warning(chosen: float, cfg: CostConfig) -> str | None:
+    """Flag a sweep that lands far from the closed-form optimum.
+
+    On well-calibrated probabilities the empirical argmin converges to
+    ``cfg.bayes_threshold``. A large gap does not mean the sweep is wrong — the
+    sweep is measuring what actually happens — it means the model's probabilities
+    are not behaving like probabilities, so the rupee figures downstream deserve a
+    second look. This is a different complaint from degenerate economics and is
+    reported separately.
+    """
+    bayes = cfg.bayes_threshold
+    if bayes <= 0:
+        return None
+    gap = abs(chosen - bayes)
+    tolerance = max(CALIBRATION_GAP_ABS, bayes * CALIBRATION_GAP_REL)
+    if gap <= tolerance:
+        return None
+    return (
+        f"The cost-optimal threshold found by sweeping ({chosen:.3f}) sits well away from the "
+        f"closed-form Bayes threshold for these costs ({bayes:.3f}). On calibrated probabilities "
+        f"those agree, so this gap suggests the model's probabilities are not well calibrated. "
+        f"The cost figures remain correct for the decisions actually taken, but treat the "
+        f"confidence values with care."
+    )
 
 
 def _plateau_fraction(curve: list[ThresholdPoint]) -> float:

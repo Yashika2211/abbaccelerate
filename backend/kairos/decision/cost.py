@@ -94,6 +94,26 @@ class CostConfig:
         )
 
     @property
+    def bayes_threshold(self) -> float:
+        """The cost-sensitive Bayes-optimal probability threshold, in closed form.
+
+        Acting is worth it when the expected cost of acting is below the expected
+        cost of not acting::
+
+            p * c_tp + (1-p) * c_fp  <  p * c_fn
+            =>  p  >  c_fp / (c_fp + c_fn - c_tp)
+
+        This is what the empirical sweep SHOULD converge to on well-calibrated
+        probabilities, so the gap between the two is a calibration diagnostic: a
+        sweep that lands far from here is telling you the probabilities do not
+        mean what they say. It is shown next to the chosen threshold in the UI.
+        """
+        denominator = self.c_inspection + self.cost_unplanned_event - self.cost_planned_event
+        if denominator <= 0:
+            return 0.0
+        return float(min(max(self.c_inspection / denominator, 0.0), 1.0))
+
+    @property
     def consequence_ratio(self) -> float:
         """How many false alarms one missed failure is worth.
 
