@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0b0f14;
+  --color-panel: #111820;
+  --color-edge: #1e2a36;
+  --color-muted: #7d8da0;
+  --color-signal: #4ade80;
+  --color-alarm: #f87171;
+  --color-accent: #38bdf8;
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--color-ink); color: #e6edf3; }
