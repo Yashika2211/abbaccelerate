@@ -87,13 +87,40 @@ def test_group_split_refuses_a_single_group() -> None:
         group_split(frame, "unit_id")
 
 
-def test_make_splits_uses_the_official_holdout_for_cmapss(cmapss) -> None:
-    """Published C-MAPSS numbers are on the official test set; carving our own
-    would make the leaderboard incomparable."""
+def test_policy_test_set_holds_complete_trajectories_not_the_truncated_holdout(cmapss) -> None:
+    """Two questions, two test sets.
+
+    The published C-MAPSS test set stops recording before failure, so a lead-time
+    policy evaluated on it eats an unplanned failure for every engine whose data
+    ran out — 81 of 100 at a 25-cycle lead time. Cost must be simulated on complete
+    run-to-failure trajectories; the truncated set is kept only for accuracy
+    metrics comparable to published results.
+    """
     split = make_splits(cmapss)
-    assert split.strategy == "group_shuffle_with_official_holdout"
-    assert len(split.test) == len(cmapss.holdout)
-    assert set(split.train.unit_id) & set(split.val.unit_id) == set()
+    assert split.strategy == "group_shuffle_complete_trajectories"
+
+    # Every policy-test engine runs to failure: its last cycle has zero life left.
+    last = split.test.sort_values("cycle").groupby("unit_id").tail(1)
+    assert (last.rul == 0).all()
+
+    # The published holdout is carried, unused for cost, and is genuinely truncated.
+    assert split.reference_holdout is not None
+    ref_last = split.reference_holdout.sort_values("cycle").groupby("unit_id").tail(1)
+    assert (ref_last.rul > 0).all()
+
+    for a, b in (("train", "val"), ("train", "test"), ("val", "test")):
+        assert set(getattr(split, a).unit_id) & set(getattr(split, b).unit_id) == set()
+
+
+def test_the_truncation_artefact_is_real_and_measured(cmapss) -> None:
+    """Documents the number that justifies the split design above."""
+    holdout = cmapss.holdout
+    final_rul = holdout.groupby("unit_id").rul.min()
+    never_alert = int((final_rul > 25).sum())
+    assert never_alert >= 70, (
+        "if this drops, the truncation artefact has changed and the split design "
+        "should be revisited"
+    )
 
 
 # ----------------------------------------------------------- Trap 2: RUL labels

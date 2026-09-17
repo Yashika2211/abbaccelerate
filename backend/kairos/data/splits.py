@@ -32,6 +32,10 @@ class Split:
     strategy: str
     group_col: str | None = None
     target: str | None = None
+    #: The dataset's own published test set, when it has one. Used ONLY for accuracy
+    #: metrics comparable to the literature — never for policy simulation. See
+    #: make_splits() for why those are different questions.
+    reference_holdout: pd.DataFrame | None = None
     notes: list[str] = field(default_factory=list)
 
     def assert_no_group_leakage(self) -> None:
@@ -195,27 +199,37 @@ def make_splits(
     frame = dataset.frame
 
     if dataset.group_col and dataset.holdout is not None:
-        train, val = group_split(frame, dataset.group_col, test_size=val_size, seed=seed)
-        split = Split(
-            train=train,
-            val=val,
-            test=dataset.holdout.copy(),
-            strategy="group_shuffle_with_official_holdout",
-            group_col=dataset.group_col,
-            target=dataset.target,
-            notes=[
-                f"Train/validation split by {dataset.group_col!r}; no engine appears in both.",
-                "Test is the dataset's own held-out set, so results stay comparable to "
-                "published C-MAPSS numbers.",
-                "Train and test engine IDs are numbered independently and are NOT the same "
-                "engines, so an ID appearing in both is expected and is not leakage.",
-            ],
+        # Two different questions need two different test sets.
+        #
+        # C-MAPSS's published test set is TRUNCATED: each engine's recording stops
+        # at an arbitrary point before failure. That is fine for "how accurate is
+        # the RUL estimate at this moment", which is what the literature reports.
+        #
+        # It is invalid for "what would this maintenance policy have cost", because
+        # a lead-time policy can only alert on cycles that were recorded. Measured
+        # on FD001: 81 of 100 test engines stop before their RUL ever reaches 25, so
+        # a policy evaluated there eats 81 unplanned failures regardless of model
+        # quality. That is an artefact of the recording window, not a property of
+        # the model, and it makes fixed-interval maintenance look 3x better than it is.
+        #
+        # So: policy cost is simulated on held-out engines with COMPLETE
+        # run-to-failure trajectories, and the published holdout is carried
+        # alongside for literature-comparable accuracy only.
+        split = group_train_val_test(
+            frame, dataset.group_col, val_size=val_size, test_size=test_size, seed=seed
         )
-        # Only the train/val boundary is checkable here; test comes from a separate file.
-        Split(
-            train=train, val=val, test=val.iloc[0:0], strategy="check",
-            group_col=dataset.group_col,
-        ).assert_no_group_leakage()
+        split.target = dataset.target
+        split.strategy = "group_shuffle_complete_trajectories"
+        split.reference_holdout = dataset.holdout.copy()
+        split.notes = [
+            f"Train/validation/test split by {dataset.group_col!r}; no engine appears twice.",
+            "Test engines have COMPLETE run-to-failure trajectories, which is the only "
+            "valid basis for simulating an intervention policy.",
+            "The dataset's published (truncated) test set is retained separately for "
+            "accuracy metrics comparable to published C-MAPSS results. It is not used "
+            "for cost, because 81% of its engines stop recording before any sane alert "
+            "threshold is reached.",
+        ]
         return split
 
     if dataset.group_col:

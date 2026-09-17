@@ -148,7 +148,7 @@ def run_cmapss(budget: float, seed: int) -> int:
         ).frame
 
     dataset.frame = prepare(dataset.frame)
-    dataset.holdout = prepare(dataset.holdout)
+    dataset.holdout = prepare(dataset.holdout)  # kept for accuracy metrics only
 
     features = [
         c for c in dataset.frame.columns
@@ -157,6 +157,10 @@ def run_cmapss(budget: float, seed: int) -> int:
     split = make_splits(dataset, seed=seed)
     rule("SPLIT")
     print(f"  strategy={split.strategy}  rows={split.sizes()}  engines={split.group_counts()}")
+    if split.reference_holdout is not None:
+        print(f"  published holdout retained for accuracy only: "
+              f"{len(split.reference_holdout):,} rows, "
+              f"{split.reference_holdout.unit_id.nunique()} engines")
     for note in split.notes:
         print(f"  - {note}")
 
