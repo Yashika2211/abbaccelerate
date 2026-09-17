@@ -20,9 +20,11 @@ import numpy as np
 
 from kairos.decision.cost import (
     CostConfig,
+    RulPolicyResult,
     annualize,
     classification_cost_matrix,
     classification_exposure_asset_years,
+    rul_lead_time_sweep,
 )
 
 #: Thresholds this close to the ends mean the economics, not the model, are deciding.
@@ -270,3 +272,93 @@ def apply_threshold(
 ) -> np.ndarray:
     """Freeze a validation-chosen threshold onto another split. Positive when p >= tau."""
     return (np.asarray(y_prob, dtype=float).ravel() >= threshold).astype(int)
+
+
+# ------------------------------------------------------------------ RUL policy
+
+
+@dataclass(frozen=True)
+class LeadTimeDecision:
+    """The chosen intervention lead time, plus the U-curve that justifies it."""
+
+    lead_time: int
+    chosen_on: str
+    point: RulPolicyResult
+    curve: list[RulPolicyResult]
+    degenerate: bool
+    degenerate_reason: str | None
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "lead_time": self.lead_time,
+            "chosen_on": self.chosen_on,
+            "point": self.point.as_dict(),
+            "degenerate": self.degenerate,
+            "degenerate_reason": self.degenerate_reason,
+            "curve": [p.as_dict() for p in self.curve],
+        }
+
+
+def optimal_lead_time(
+    unit_ids: Sequence[Any] | np.ndarray,
+    cycles: Sequence[float] | np.ndarray,
+    pred_rul: Sequence[float] | np.ndarray,
+    failure_cycle: dict[Any, float],
+    cfg: CostConfig,
+    lead_times: Sequence[int] | None = None,
+    chosen_on: str = "validation",
+) -> LeadTimeDecision:
+    """Pick the cost-minimising lead time. PROJECT_BRIEF.md §3.3.
+
+    The curve this sweeps is the hero chart: too late means unplanned failures,
+    too early means throwing away good component life, and the bottom of the U is
+    the recommendation. Ties break toward the *earlier* lead time here — unlike
+    the classification threshold, the two directions are not symmetric. Being a
+    cycle early costs a known sliver of component life; being a cycle late risks
+    the whole unplanned-failure bill.
+    """
+    grid = list(range(0, 61)) if lead_times is None else list(lead_times)
+    if not grid:
+        raise ValueError("cannot optimise a lead time over an empty grid")
+
+    curve = rul_lead_time_sweep(unit_ids, cycles, pred_rul, failure_cycle, cfg, lead_times=grid)
+    costs = np.array([r.total_cost for r in curve])
+    tied = np.flatnonzero(costs == costs.min())
+    best = curve[int(tied[-1])]  # latest index == longest tied lead time == most margin
+
+    degenerate, reason = _diagnose_lead_time_degeneracy(best, curve, cfg)
+    return LeadTimeDecision(
+        lead_time=best.lead_time,
+        chosen_on=chosen_on,
+        point=best,
+        curve=curve,
+        degenerate=degenerate,
+        degenerate_reason=reason,
+    )
+
+
+def _diagnose_lead_time_degeneracy(
+    best: RulPolicyResult, curve: list[RulPolicyResult], cfg: CostConfig
+) -> tuple[bool, str | None]:
+    """Say so when the optimum is pinned to a grid edge or saves nothing."""
+    fleet = best.caught + best.missed
+    never_act = fleet * cfg.cost_unplanned_event
+
+    if best.total_cost >= never_act:
+        return True, (
+            f"The optimal lead-time policy saves nothing against run-to-failure "
+            f"({cfg.currency} {never_act:,.0f} either way). At these costs, intervening early "
+            f"is not worth it on this fleet."
+        )
+    if best.lead_time == curve[-1].lead_time:
+        return True, (
+            f"The optimum sits at the top of the swept range ({best.lead_time} cycles), so the "
+            f"true optimum may be higher. Widen the lead-time grid before acting on this."
+        )
+    if best.lead_time == curve[0].lead_time and len(curve) > 1:
+        return True, (
+            f"The optimum sits at the bottom of the swept range ({best.lead_time} cycles): "
+            f"intervening as late as possible is best, which usually means the scrap value of "
+            f"remaining life outweighs the failure risk at these costs."
+        )
+    return False, None
