@@ -88,7 +88,7 @@ export default function Degradation({
       }
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 8, right: 64, bottom: 20, left: 8 }}>
+        <LineChart data={points} margin={{ top: 8, right: 70, bottom: 20, left: 8 }}>
           <CartesianGrid {...GRID_PROPS} />
           <XAxis
             dataKey="cycle"
@@ -139,7 +139,9 @@ export default function Degradation({
             isAnimationActive={false}
             label={({ index, x, y }: { index?: number; x?: number; y?: number }) =>
               index === points.length - 1 && x !== undefined && y !== undefined ? (
-                <text x={x + 6} y={y} fill={SERIES[2]} fontSize={10} dominantBaseline="middle">
+                // Both series end near zero, so the labels are split vertically
+                // rather than stacked on the same pixel.
+                <text x={x + 6} y={y - 8} fill={SERIES[2]} fontSize={10} dominantBaseline="middle">
                   true
                 </text>
               ) : (
@@ -157,7 +159,7 @@ export default function Degradation({
             activeDot={{ r: 4, fill: SERIES[0], stroke: INK.surface, strokeWidth: 2 }}
             label={({ index, x, y }: { index?: number; x?: number; y?: number }) =>
               index === points.length - 1 && x !== undefined && y !== undefined ? (
-                <text x={x + 6} y={y} fill={SERIES[0]} fontSize={10} dominantBaseline="middle">
+                <text x={x + 6} y={y + 8} fill={SERIES[0]} fontSize={10} dominantBaseline="middle">
                   predicted
                 </text>
               ) : (
