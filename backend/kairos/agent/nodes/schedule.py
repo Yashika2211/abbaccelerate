@@ -13,18 +13,7 @@ from kairos.decision.schedule import WorkOrder, schedule_work_orders
 MAX_ORDERS = 25
 
 
-def _drivers_for(store, row_index: int, top_n: int = 3) -> list[dict[str, Any]]:
-    """Per-asset SHAP drivers, when explain() produced them for this row."""
-    values = store.extra.get("shap_values")
-    sample = store.extra.get("shap_sample")
-    if values is None or sample is None:
-        return []
-    positions = {idx: i for i, idx in enumerate(sample.index)}
-    pos = positions.get(row_index)
-    if pos is None:
-        return []
-    contributions = values[pos]
-    features = store.feature_names
+def _rank(contributions, features: list[str], top_n: int) -> list[dict[str, Any]]:
     order = np.argsort(-np.abs(contributions))[:top_n]
     return [
         {
@@ -34,6 +23,37 @@ def _drivers_for(store, row_index: int, top_n: int = 3) -> list[dict[str, Any]]:
         }
         for i in order
     ]
+
+
+def _drivers_for(store, row_index: Any, top_n: int = 3) -> list[dict[str, Any]]:
+    """Per-asset SHAP drivers.
+
+    The global explanation samples 500 rows, and the riskiest assets are usually
+    not among them. Rather than return nothing — which would leave work orders
+    citing no cause at all — the retained explainer is evaluated on that single
+    row. One row of TreeSHAP is sub-millisecond, so this costs nothing.
+    """
+    features = store.feature_names
+    values = store.extra.get("shap_values")
+    sample = store.extra.get("shap_sample")
+
+    if values is not None and sample is not None:
+        positions = {idx: i for i, idx in enumerate(sample.index)}
+        pos = positions.get(row_index)
+        if pos is not None:
+            return _rank(values[pos], features, top_n)
+
+    explainer = store.extra.get("shap_explainer")
+    if explainer is None or store.split is None:
+        return []
+    try:
+        from kairos.agent.nodes.explain import shap_for
+
+        row = store.split.test.loc[[row_index], features]
+        single = shap_for(explainer, row)
+        return _rank(single[0], features, top_n) if single is not None else []
+    except Exception:  # noqa: BLE001 - a missing driver list is not worth a failed run
+        return []
 
 
 def node_schedule(state: KairosState) -> dict[str, Any]:
@@ -65,12 +85,16 @@ def node_schedule(state: KairosState) -> dict[str, Any]:
             flagged = flagged[np.argsort(-probabilities[flagged])][:MAX_ORDERS]
             for pos in flagged:
                 idx = test.index[pos]
+                # No time column exists on this dataset, so urgency is derived from
+                # risk: the more likely the failure, the less slack we assume.
+                slack_days = float(max(1, round((1 - probabilities[pos]) * 10)))
                 orders.append(WorkOrder(
                     asset_id=str(idx),
                     asset_label=f"Unit {idx}",
                     risk=float(probabilities[pos]),
-                    deadline=float(cfg.technician_capacity_per_day),
-                    days_until_deadline=float(max(1, round((1 - probabilities[pos]) * 10))),
+                    deadline=slack_days,
+                    deadline_unit="day",
+                    days_until_deadline=slack_days,
                     expected_cost_if_acted=cfg.cost_planned_event,
                     expected_cost_if_ignored=float(probabilities[pos]) * cfg.cost_unplanned_event,
                     recommended_action="Inspect and replace if degraded",
@@ -95,6 +119,7 @@ def node_schedule(state: KairosState) -> dict[str, Any]:
                     asset_label=f"Engine {int(unit)}",
                     risk=float(first._pred),
                     deadline=failure_cycle,
+                    deadline_unit="cycle",
                     days_until_deadline=slack,
                     expected_cost_if_acted=cfg.cost_planned_event,
                     expected_cost_if_ignored=cfg.cost_unplanned_event,

@@ -22,7 +22,7 @@ def _template(payload: dict[str, Any]) -> str:
     driver_text = ", ".join(d["feature"] for d in drivers[:3]) or "no driver data available"
     return (
         f"{payload['asset_label']} is flagged for maintenance. "
-        f"Recommended action: {payload['recommended_action']} by {payload['act_by']}. "
+        f"Recommended action: {payload['recommended_action']} ({payload['act_by']}). "
         f"Acting now is estimated at {currency} {payload['cost_if_acted']:,.0f}; leaving it "
         f"is estimated at {currency} {payload['cost_if_ignored']:,.0f}. "
         f"Primary drivers: {driver_text}."

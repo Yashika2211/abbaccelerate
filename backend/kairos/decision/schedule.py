@@ -30,6 +30,8 @@ class WorkOrder:
     expected_cost_if_acted: float
     expected_cost_if_ignored: float
     recommended_action: str
+    #: "cycle" for RUL work; "day" where the dataset carries no time axis at all.
+    deadline_unit: str = "cycle"
     top_drivers: list[dict[str, Any]] = field(default_factory=list)
     scheduled_day: int | None = None
     serviceable: bool = True
@@ -57,7 +59,11 @@ class WorkOrder:
             "cost_avoided": self.cost_avoided,
             "priority": self.priority,
             "recommended_action": self.recommended_action,
-            "act_by": f"cycle {self.deadline:.0f}",
+            "deadline_unit": self.deadline_unit,
+            "act_by": (
+                f"cycle {self.deadline:.0f}" if self.deadline_unit == "cycle"
+                else f"within {self.deadline:.0f} day(s)"
+            ),
             "top_drivers": self.top_drivers,
             "scheduled_day": self.scheduled_day,
             "serviceable": self.serviceable,

@@ -16,7 +16,10 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from kairos import __version__
 from kairos.config import get_settings
+from kairos.db import models as _models  # noqa: F401  (registers tables)
 from kairos.db import session as db
+from kairos.api.datasets import router as datasets_router
+from kairos.api.runs import router as runs_router
 from kairos.events import bind_loop, sse_format
 from kairos.spike.hitl_spike import router as spike_router
 
@@ -61,6 +64,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(datasets_router)
+app.include_router(runs_router)
 app.include_router(spike_router)
 
 
@@ -75,6 +80,16 @@ async def no_naked_tracebacks(request, call_next):
             status_code=500,
             content={"error": "internal_error", "detail": str(exc), "path": request.url.path},
         )
+
+
+def _checkpointer_status() -> str:
+    """Which LangGraph checkpointer the agent actually got. Never raises."""
+    try:
+        from kairos.agent.graph import checkpointer_kind
+
+        return checkpointer_kind()
+    except Exception:  # noqa: BLE001
+        return "unavailable"
 
 
 def _mlflow_ok() -> bool:
@@ -96,6 +111,7 @@ def health() -> dict[str, Any]:
         "uptime_s": round(time.time() - STARTED_AT, 1),
         "components": {
             "postgres": "up" if postgres_ok else "down",
+            "checkpointer": _checkpointer_status(),
             "mlflow": "up" if _mlflow_ok() else "down",
             "llm": "configured" if settings.llm_enabled else "fallback_templates",
         },

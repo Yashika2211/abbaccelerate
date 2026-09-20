@@ -24,14 +24,18 @@ GLOBAL_SAMPLE = 500
 TOP_N_ASSETS = 10
 
 
-def _tree_shap(model: Any, frame) -> np.ndarray | None:
-    try:
-        import shap
+def build_explainer(model: Any):
+    """A TreeExplainer over the estimator, unwrapped from any pipeline."""
+    import shap
 
-        inner = getattr(model, "named_steps", {}).get("clf") or getattr(
-            model, "named_steps", {}
-        ).get("reg") or model
-        explainer = shap.TreeExplainer(inner)
+    steps = getattr(model, "named_steps", {})
+    inner = steps.get("clf") or steps.get("reg") or model
+    return shap.TreeExplainer(inner)
+
+
+def shap_for(explainer: Any, frame) -> np.ndarray | None:
+    """SHAP values shaped (rows, features), whichever API version is installed."""
+    try:
         values = explainer.shap_values(frame, check_additivity=False)
         if isinstance(values, list):          # older API returns one array per class
             values = values[-1]
@@ -39,6 +43,14 @@ def _tree_shap(model: Any, frame) -> np.ndarray | None:
         if values.ndim == 3:                  # (rows, features, classes)
             values = values[..., -1]
         return values
+    except Exception as exc:  # noqa: BLE001
+        log.warning("SHAP evaluation failed: %s", exc)
+        return None
+
+
+def _tree_shap(model: Any, frame) -> np.ndarray | None:
+    try:
+        return shap_for(build_explainer(model), frame)
     except Exception as exc:  # noqa: BLE001
         log.warning("TreeExplainer unavailable: %s", exc)
         return None
@@ -91,6 +103,13 @@ def node_explain(state: KairosState) -> dict[str, Any]:
         store.extra["shap_values"] = values
         store.extra["shap_sample"] = sample
         store.extra["shap_global"] = global_ranking
+        # Kept so the scheduler can explain an individual asset that did not happen
+        # to fall inside the global sample. Without this, work orders cite no
+        # drivers, which is exactly the thing the brief forbids faking.
+        try:
+            store.extra["shap_explainer"] = build_explainer(trial.model)
+        except Exception:  # noqa: BLE001
+            store.extra["shap_explainer"] = None
 
         box["summary"] = (
             f"SHAP over {len(sample)} rows; top driver is {global_ranking[0]['feature']}."

@@ -19,7 +19,7 @@ def test_health_reports_every_component() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] in {"ok", "degraded"}
-    assert set(body["components"]) == {"postgres", "mlflow", "llm"}
+    assert {"postgres", "mlflow", "llm", "checkpointer"} <= set(body["components"])
 
 
 def test_health_never_500s_even_if_postgres_is_gone(monkeypatch) -> None:

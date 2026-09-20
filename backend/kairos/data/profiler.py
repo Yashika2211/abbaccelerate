@@ -433,10 +433,16 @@ def profile_dataset(dataset: Dataset, seed: int = 0) -> DatasetProfile:
         else []
     )
 
+    # A column convicted of leakage is emphatically NOT "carrying no signal" — it
+    # carries the answer. Rare binary flags trip the dominance rule (twf fires on
+    # 0.5% of rows), so without this they would be reported twice, once as dead and
+    # once as leaking, and the "dead sensor" count would be wrong. They are still
+    # dropped; they are just filed under the reason that actually applies.
+    convicted = {w.column for w in leakage if w.severity == "certain"} | set(documented_undetected)
+    constant = [c for c in constant if c not in convicted]
+
     drops = sorted(
-        set(constant) | set(identifiers) | set(dataset.id_columns)
-        | {w.column for w in leakage if w.severity == "certain"}
-        | set(documented_undetected)
+        set(constant) | set(identifiers) | set(dataset.id_columns) | convicted
     )
 
     findings = _build_findings(
@@ -483,11 +489,16 @@ def _build_findings(
     out: list[str] = []
 
     if constant:
-        out.append(
-            f"{len(constant)} column(s) carry no signal at all and will be dropped: "
-            f"{', '.join(constant)}. On C-MAPSS FD001 these are the sensors that never "
-            f"move under a single operating condition."
+        message = (
+            f"{len(constant)} column(s) carry no usable signal and will be dropped: "
+            f"{', '.join(constant)}."
         )
+        if any(c.startswith(("sensor_", "op_setting_")) for c in constant):
+            message += (
+                " These are instrument channels that never move under this operating "
+                "condition — constant, or near enough that the variation is noise."
+            )
+        out.append(message)
     if identifiers:
         out.append(
             f"{len(identifiers)} column(s) look like row identifiers rather than "
@@ -522,13 +533,26 @@ def _build_findings(
     dupes = int(frame.duplicated().sum())
     if dupes:
         out.append(f"{dupes} exactly duplicated row(s) found.")
-    drifty = sorted(((v, k) for k, v in drift.items() if v > 1.0), reverse=True)[:3]
+    drifty = sorted(
+        ((v, k) for k, v in drift.items() if v > 1.0 and k not in set(identifiers)),
+        reverse=True,
+    )[:3]
     if drifty:
-        out.append(
+        message = (
             "Columns whose mean shifts most between the first and second half of the data: "
             + ", ".join(f"{k} ({v:.1f} sd)" for v, k in drifty)
-            + ". On a run-to-failure dataset this is degradation, which is signal, not drift."
+            + "."
         )
+        if dataset.group_col and dataset.time_col:
+            message += (
+                " On a run-to-failure dataset this is degradation — it is the signal, not drift."
+            )
+        else:
+            message += (
+                " With no time ordering in this dataset the comparison is over row order, so "
+                "treat it as a hint to check collection conditions, not as evidence of drift."
+            )
+        out.append(message)
     if dataset.source == "synthetic":
         out.append("SYNTHETIC DATA: every figure from this run is illustrative, not evidential.")
     if task_type:
