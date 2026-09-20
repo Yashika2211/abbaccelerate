@@ -123,7 +123,7 @@ def node_schedule(state: KairosState) -> dict[str, Any]:
                     days_until_deadline=slack,
                     expected_cost_if_acted=cfg.cost_planned_event,
                     expected_cost_if_ignored=cfg.cost_unplanned_event,
-                    recommended_action=f"Schedule overhaul before cycle {failure_cycle:.0f}",
+                    recommended_action="Schedule overhaul",
                     top_drivers=_drivers_for(store, first.name),
                     currency=cfg.currency,
                 ))

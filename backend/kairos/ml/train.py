@@ -261,7 +261,11 @@ def train_all(
         wanted = set(only)
         zoo = [c for c in zoo if c.key in wanted]
 
-    order = {"baseline": 0, "linear": 1, "bagging": 2, "boosting": 3}
+    # Ordered by measured cost, not by intuition. On C-MAPSS with 257 features a
+    # random forest takes 87s while LightGBM takes 13s, so putting bagging before
+    # boosting burned the entire budget before reaching the two models the whole
+    # comparison is about. Cheapest first, for real.
+    order = {"baseline": 0, "linear": 1, "boosting": 2, "bagging": 3}
     zoo = sorted(zoo, key=lambda c: order.get(c.family, 99))
 
     started = time.perf_counter()

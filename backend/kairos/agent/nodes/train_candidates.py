@@ -75,9 +75,12 @@ def node_train_candidates(state: KairosState) -> dict[str, Any]:
         for trial in report.successful:
             store.models[trial.model_id] = trial
 
+        offered = len(plan.get("candidate_models") or []) or len(report.trials)
+        skipped = max(offered - len(report.trials), 0)
         box["summary"] = (
-            f"Attempt {attempt}: trained {len(report.successful)}/{len(report.trials)} "
-            f"candidates in {report.elapsed_seconds:.1f}s."
+            f"Attempt {attempt}: trained {len(report.successful)} of {offered} candidates "
+            f"in {report.elapsed_seconds:.1f}s"
+            + (f" ({skipped} skipped, budget exhausted)." if skipped else ".")
         )
         box["reasoning"] = " ".join(report.findings) or "All candidates trained cleanly."
         box["payload"] = report.as_dict()
