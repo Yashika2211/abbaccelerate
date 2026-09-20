@@ -98,3 +98,10 @@ export const AGENT_EVENTS = [
   "error",
   "stream_end",
 ];
+
+export const charts = {
+  costCurve: (id: string) => getJSON<Record<string, unknown>>(`/api/runs/${id}/cost-curve`),
+  calibration: (id: string) => getJSON<Record<string, unknown>>(`/api/runs/${id}/calibration`),
+  explain: (id: string) => getJSON<Record<string, unknown>>(`/api/runs/${id}/explain`),
+  degradation: (id: string) => getJSON<Record<string, unknown>>(`/api/runs/${id}/degradation`),
+};

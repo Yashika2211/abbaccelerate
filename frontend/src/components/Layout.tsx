@@ -10,6 +10,7 @@ const TABS = [
   { to: "/cost", label: "Cost Studio" },
   { to: "/run", label: "Run" },
   { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/explain", label: "Explain" },
 ];
 
 export default function Layout() {
