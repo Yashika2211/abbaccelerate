@@ -1,0 +1,628 @@
+{
+  "run_id": "979e5cbf61b744cea69eb88877e0895f",
+  "feature_names": [
+    "air_temp_k",
+    "process_temp_k",
+    "rotational_speed_rpm",
+    "torque_nm",
+    "tool_wear_min",
+    "power_w",
+    "temp_delta_k",
+    "wear_x_torque",
+    "type_ordinal"
+  ],
+  "cost_config": {
+    "c_unplanned_repair": 25000,
+    "c_planned_repair": 6000,
+    "c_inspection": 1200,
+    "downtime_rate_per_hour": 9000,
+    "unplanned_downtime_hours": 3,
+    "planned_downtime_hours": 0.5,
+    "c_secondary_damage": 0.0,
+    "part_lead_time_cycles": 0,
+    "value_per_remaining_cycle": 0.0,
+    "technician_capacity_per_day": 6,
+    "currency": "INR",
+    "cycles_per_year": 500.0,
+    "observations_per_asset_year": 10000.0
+  },
+  "champion_id": "random_forest-85f1c1d4",
+  "trials": [
+    {
+      "model_id": "baseline_majority-f3b1b5f6",
+      "candidate_key": "baseline_majority",
+      "model_name": "Baseline (predict prior)",
+      "family": "baseline",
+      "task_type": "binary_classification",
+      "metrics": {
+        "roc_auc": 0.5,
+        "pr_auc": 0.034,
+        "recall_at_p50": 0.0,
+        "recall_at_p80": 0.0,
+        "log_loss": 0.1483827641059923,
+        "brier": 0.03284400044752066,
+        "positive_rate": 0.034,
+        "n_rows": 2000.0
+      },
+      "cv_metrics": {
+        "cv_roc_auc": 0.5,
+        "cv_n_rows": 2000.0,
+        "cv_recall_at_p80": 0.0,
+        "cv_positive_rate": 0.03383333333333333,
+        "cv_pr_auc": 0.03383333333333333,
+        "cv_recall_at_p50": 0.0,
+        "cv_log_loss": 0.14782559407258597,
+        "cv_brier": 0.03268870833333332
+      },
+      "fit_seconds": 0.015536450984654948,
+      "supports_shap": false,
+      "calibration": {
+        "method": "sigmoid",
+        "brier_before": 0.03284402777777777,
+        "brier_after": 0.032844000447520665,
+        "ece_before": 0.00016666666666667607,
+        "ece_after": 2.115468440935797e-05,
+        "improved": true,
+        "bins": [
+          {
+            "bin_lower": 0.0,
+            "bin_upper": 0.1,
+            "mean_predicted": 0.03402115468440936,
+            "observed_frequency": 0.034,
+            "count": 2000
+          }
+        ],
+        "n_calibration_rows": 2000,
+        "n_calibration_positives": 68
+      }
+    },
+    {
+      "model_id": "logistic-8ca93c73",
+      "candidate_key": "logistic",
+      "model_name": "Logistic regression",
+      "family": "linear",
+      "task_type": "binary_classification",
+      "metrics": {
+        "roc_auc": 0.9346227621483376,
+        "pr_auc": 0.4528017758156835,
+        "recall_at_p50": 0.4264705882352941,
+        "recall_at_p80": 0.07352941176470588,
+        "log_loss": 0.0918296196880186,
+        "brier": 0.025103213233112775,
+        "positive_rate": 0.034,
+        "n_rows": 2000.0
+      },
+      "cv_metrics": {
+        "cv_roc_auc": 0.9184483073068811,
+        "cv_n_rows": 2000.0,
+        "cv_recall_at_p80": 0.1729587357330992,
+        "cv_positive_rate": 0.03383333333333333,
+        "cv_pr_auc": 0.4843741680816535,
+        "cv_recall_at_p50": 0.47827041264266895,
+        "cv_log_loss": 0.33894907401736774,
+        "cv_brier": 0.10457948670927508
+      },
+      "fit_seconds": 0.03839824299211614,
+      "supports_shap": false,
+      "calibration": {
+        "method": "sigmoid",
+        "brier_before": 0.107044546069958,
+        "brier_after": 0.025939600496213057,
+        "ece_before": 0.20153571758264438,
+        "ece_after": 0.011815647004710144,
+        "improved": true,
+        "bins": [
+          {
+            "bin_lower": 0.0,
+            "bin_upper": 0.1,
+            "mean_predicted": 0.014289131785283111,
+            "observed_frequency": 0.011142061281337047,
+            "count": 1795
+          },
+          {
+            "bin_lower": 0.1,
+            "bin_upper": 0.2,
+            "mean_predicted": 0.14454660003716377,
+            "observed_frequency": 0.09345794392523364,
+            "count": 107
+          },
+          {
+            "bin_lower": 0.2,
+            "bin_upper": 0.30000000000000004,
+            "mean_predicted": 0.2501219148361627,
+            "observed_frequency": 0.23880597014925373,
+            "count": 67
+          },
+          {
+            "bin_lower": 0.30000000000000004,
+            "bin_upper": 0.4,
+            "mean_predicted": 0.3303984530052361,
+            "observed_frequency": 0.7096774193548387,
+            "count": 31
+          }
+        ],
+        "n_calibration_rows": 2000,
+        "n_calibration_positives": 68
+      }
+    },
+    {
+      "model_id": "lightgbm-72a0f785",
+      "candidate_key": "lightgbm",
+      "model_name": "LightGBM",
+      "family": "boosting",
+      "task_type": "binary_classification",
+      "metrics": {
+        "roc_auc": 0.964909876994276,
+        "pr_auc": 0.8926892879192666,
+        "recall_at_p50": 0.8676470588235294,
+        "recall_at_p80": 0.8676470588235294,
+        "log_loss": 0.04130465421464358,
+        "brier": 0.00703743840521236,
+        "positive_rate": 0.034,
+        "n_rows": 2000.0
+      },
+      "cv_metrics": {
+        "cv_roc_auc": 0.977151460696697,
+        "cv_n_rows": 2000.0,
+        "cv_recall_at_p80": 0.8671349136669594,
+        "cv_positive_rate": 0.03383333333333333,
+        "cv_pr_auc": 0.8834186062345507,
+        "cv_recall_at_p50": 0.9015949663447468,
+        "cv_log_loss": 0.07340061932226517,
+        "cv_brier": 0.008247558225230602
+      },
+      "fit_seconds": 0.7009213079873007,
+      "supports_shap": true,
+      "calibration": {
+        "method": "sigmoid",
+        "brier_before": 0.00912193245166864,
+        "brier_after": 0.009198852658804567,
+        "ece_before": 0.009433607699895518,
+        "ece_after": 0.0069786877795730475,
+        "improved": false,
+        "bins": [
+          {
+            "bin_lower": 0.0,
+            "bin_upper": 0.1,
+            "mean_predicted": 0.010833207394442709,
+            "observed_frequency": 0.007720020586721565,
+            "count": 1943
+          },
+          {
+            "bin_lower": 0.2,
+            "bin_upper": 0.30000000000000004,
+            "mean_predicted": 0.2895687038650038,
+            "observed_frequency": 0.0,
+            "count": 1
+          },
+          {
+            "bin_lower": 0.4,
+            "bin_upper": 0.5,
+            "mean_predicted": 0.4496619885174545,
+            "observed_frequency": 1.0,
+            "count": 1
+          },
+          {
+            "bin_lower": 0.6000000000000001,
+            "bin_upper": 0.7000000000000001,
+            "mean_predicted": 0.641444162057144,
+            "observed_frequency": 0.0,
+            "count": 1
+          },
+          {
+            "bin_lower": 0.8,
+            "bin_upper": 0.9,
+            "mean_predicted": 0.8439425423270515,
+            "observed_frequency": 0.9629629629629629,
+            "count": 54
+          }
+        ],
+        "n_calibration_rows": 2000,
+        "n_calibration_positives": 68
+      }
+    },
+    {
+      "model_id": "xgboost-da98fc71",
+      "candidate_key": "xgboost",
+      "model_name": "XGBoost",
+      "family": "boosting",
+      "task_type": "binary_classification",
+      "metrics": {
+        "roc_auc": 0.9700021312872975,
+        "pr_auc": 0.8859275518973548,
+        "recall_at_p50": 0.8970588235294118,
+        "recall_at_p80": 0.8382352941176471,
+        "log_loss": 0.0462823472855462,
+        "brier": 0.008979031528355476,
+        "positive_rate": 0.034,
+        "n_rows": 2000.0
+      },
+      "cv_metrics": {
+        "cv_roc_auc": 0.9747485298354706,
+        "cv_n_rows": 2000.0,
+        "cv_recall_at_p80": 0.7888498683055313,
+        "cv_positive_rate": 0.03383333333333333,
+        "cv_pr_auc": 0.8681774633386067,
+        "cv_recall_at_p50": 0.8869622475856014,
+        "cv_log_loss": 0.04788985423256953,
+        "cv_brier": 0.00999800155926752
+      },
+      "fit_seconds": 0.40762469702167436,
+      "supports_shap": true,
+      "calibration": {
+        "method": "sigmoid",
+        "brier_before": 0.010017168612604144,
+        "brier_after": 0.009705398078055327,
+        "ece_before": 0.008924652212795536,
+        "ece_after": 0.00736777001089671,
+        "improved": true,
+        "bins": [
+          {
+            "bin_lower": 0.0,
+            "bin_upper": 0.1,
+            "mean_predicted": 0.010685114439932301,
+            "observed_frequency": 0.007735946364105209,
+            "count": 1939
+          },
+          {
+            "bin_lower": 0.1,
+            "bin_upper": 0.2,
+            "mean_predicted": 0.1511402729137684,
+            "observed_frequency": 0.0,
+            "count": 2
+          },
+          {
+            "bin_lower": 0.2,
+            "bin_upper": 0.30000000000000004,
+            "mean_predicted": 0.28785596917855566,
+            "observed_frequency": 0.0,
+            "count": 1
+          },
+          {
+            "bin_lower": 0.4,
+            "bin_upper": 0.5,
+            "mean_predicted": 0.4637432114208031,
+            "observed_frequency": 0.5,
+            "count": 2
+          },
+          {
+            "bin_lower": 0.6000000000000001,
+            "bin_upper": 0.7000000000000001,
+            "mean_predicted": 0.6745568332955947,
+            "observed_frequency": 0.5,
+            "count": 2
+          },
+          {
+            "bin_lower": 0.7000000000000001,
+            "bin_upper": 0.8,
+            "mean_predicted": 0.7523257513080343,
+            "observed_frequency": 0.6,
+            "count": 5
+          },
+          {
+            "bin_lower": 0.8,
+            "bin_upper": 0.9,
+            "mean_predicted": 0.83176100801084,
+            "observed_frequency": 0.9795918367346939,
+            "count": 49
+          }
+        ],
+        "n_calibration_rows": 2000,
+        "n_calibration_positives": 68
+      }
+    },
+    {
+      "model_id": "random_forest-85f1c1d4",
+      "candidate_key": "random_forest",
+      "model_name": "Random forest",
+      "family": "bagging",
+      "task_type": "binary_classification",
+      "metrics": {
+        "roc_auc": 0.9639888564121302,
+        "pr_auc": 0.862299872209275,
+        "recall_at_p50": 0.8970588235294118,
+        "recall_at_p80": 0.8529411764705882,
+        "log_loss": 0.04543647656880204,
+        "brier": 0.009007301392542796,
+        "positive_rate": 0.034,
+        "n_rows": 2000.0
+      },
+      "cv_metrics": {
+        "cv_roc_auc": 0.9776656560977942,
+        "cv_n_rows": 2000.0,
+        "cv_recall_at_p80": 0.8770851624231781,
+        "cv_positive_rate": 0.03383333333333333,
+        "cv_pr_auc": 0.8862436200968968,
+        "cv_recall_at_p50": 0.9015949663447468,
+        "cv_log_loss": 0.0507232159255456,
+        "cv_brier": 0.009477726636467487
+      },
+      "fit_seconds": 1.8252979109820444,
+      "supports_shap": true,
+      "calibration": {
+        "method": "sigmoid",
+        "brier_before": 0.010202971804969442,
+        "brier_after": 0.00967893183696426,
+        "ece_before": 0.00920014754162631,
+        "ece_after": 0.010443768002731613,
+        "improved": true,
+        "bins": [
+          {
+            "bin_lower": 0.0,
+            "bin_upper": 0.1,
+            "mean_predicted": 0.011857317488739307,
+            "observed_frequency": 0.007759958613554061,
+            "count": 1933
+          },
+          {
+            "bin_lower": 0.1,
+            "bin_upper": 0.2,
+            "mean_predicted": 0.13775823909028084,
+            "observed_frequency": 0.0,
+            "count": 5
+          },
+          {
+            "bin_lower": 0.2,
+            "bin_upper": 0.30000000000000004,
+            "mean_predicted": 0.22447897899110128,
+            "observed_frequency": 0.16666666666666666,
+            "count": 6
+          },
+          {
+            "bin_lower": 0.30000000000000004,
+            "bin_upper": 0.4,
+            "mean_predicted": 0.3472921941238437,
+            "observed_frequency": 0.0,
+            "count": 4
+          },
+          {
+            "bin_lower": 0.4,
+            "bin_upper": 0.5,
+            "mean_predicted": 0.4426702724591023,
+            "observed_frequency": 1.0,
+            "count": 1
+          },
+          {
+            "bin_lower": 0.5,
+            "bin_upper": 0.6000000000000001,
+            "mean_predicted": 0.5306305993547794,
+            "observed_frequency": 1.0,
+            "count": 5
+          },
+          {
+            "bin_lower": 0.6000000000000001,
+            "bin_upper": 0.7000000000000001,
+            "mean_predicted": 0.6361507902139937,
+            "observed_frequency": 1.0,
+            "count": 6
+          },
+          {
+            "bin_lower": 0.7000000000000001,
+            "bin_upper": 0.8,
+            "mean_predicted": 0.7574295556176637,
+            "observed_frequency": 1.0,
+            "count": 6
+          },
+          {
+            "bin_lower": 0.8,
+            "bin_upper": 0.9,
+            "mean_predicted": 0.8600671571957864,
+            "observed_frequency": 1.0,
+            "count": 20
+          },
+          {
+            "bin_lower": 0.9,
+            "bin_upper": 1.0,
+            "mean_predicted": 0.9142031470017552,
+            "observed_frequency": 1.0,
+            "count": 14
+          }
+        ],
+        "n_calibration_rows": 2000,
+        "n_calibration_positives": 68
+      }
+    }
+  ],
+  "split": {
+    "strategy": "stratified_shuffle",
+    "group_col": null,
+    "target": "machine_failure"
+  },
+  "shap_global": [
+    {
+      "feature": "rotational_speed_rpm",
+      "mean_abs_shap": 0.1003194527376565
+    },
+    {
+      "feature": "power_w",
+      "mean_abs_shap": 0.10023799667853286
+    },
+    {
+      "feature": "torque_nm",
+      "mean_abs_shap": 0.0856370037439679
+    },
+    {
+      "feature": "wear_x_torque",
+      "mean_abs_shap": 0.07567484214065831
+    },
+    {
+      "feature": "temp_delta_k",
+      "mean_abs_shap": 0.07342279825905448
+    },
+    {
+      "feature": "tool_wear_min",
+      "mean_abs_shap": 0.05219125086406216
+    },
+    {
+      "feature": "air_temp_k",
+      "mean_abs_shap": 0.026973847169253287
+    },
+    {
+      "feature": "process_temp_k",
+      "mean_abs_shap": 0.013996986132687888
+    },
+    {
+      "feature": "type_ordinal",
+      "mean_abs_shap": 0.006296517144554639
+    }
+  ],
+  "leaderboard": {
+    "rows": [
+      {
+        "model_id": "random_forest-85f1c1d4",
+        "model_name": "Random forest",
+        "operating_point": 0.012523277498331358,
+        "operating_point_kind": "threshold",
+        "total_cost": 1109700.0,
+        "cost_per_asset_year": 5548500.0,
+        "cost_regret": 0.0,
+        "metrics": {
+          "roc_auc": 0.9639888564121302,
+          "pr_auc": 0.862299872209275,
+          "recall_at_p50": 0.8970588235294118,
+          "recall_at_p80": 0.8529411764705882,
+          "log_loss": 0.04543647656880204,
+          "brier": 0.009007301392542796,
+          "positive_rate": 0.034,
+          "n_rows": 2000.0
+        },
+        "degenerate": false,
+        "degenerate_reason": null
+      },
+      {
+        "model_id": "xgboost-da98fc71",
+        "model_name": "XGBoost",
+        "operating_point": 0.010484716641583942,
+        "operating_point_kind": "threshold",
+        "total_cost": 1115200.0,
+        "cost_per_asset_year": 5576000.0,
+        "cost_regret": 5500.0,
+        "metrics": {
+          "roc_auc": 0.9700021312872975,
+          "pr_auc": 0.8859275518973548,
+          "recall_at_p50": 0.8970588235294118,
+          "recall_at_p80": 0.8382352941176471,
+          "log_loss": 0.0462823472855462,
+          "brier": 0.008979031528355476,
+          "positive_rate": 0.034,
+          "n_rows": 2000.0
+        },
+        "degenerate": false,
+        "degenerate_reason": null
+      },
+      {
+        "model_id": "lightgbm-72a0f785",
+        "model_name": "LightGBM",
+        "operating_point": 0.010790852326732133,
+        "operating_point_kind": "threshold",
+        "total_cost": 1155900.0,
+        "cost_per_asset_year": 5779500.0,
+        "cost_regret": 46200.0,
+        "metrics": {
+          "roc_auc": 0.964909876994276,
+          "pr_auc": 0.8926892879192666,
+          "recall_at_p50": 0.8676470588235294,
+          "recall_at_p80": 0.8676470588235294,
+          "log_loss": 0.04130465421464358,
+          "brier": 0.00703743840521236,
+          "positive_rate": 0.034,
+          "n_rows": 2000.0
+        },
+        "degenerate": false,
+        "degenerate_reason": null
+      },
+      {
+        "model_id": "logistic-8ca93c73",
+        "model_name": "Logistic regression",
+        "operating_point": 0.023624859691516727,
+        "operating_point_kind": "threshold",
+        "total_cost": 1465800.0,
+        "cost_per_asset_year": 7329000.0,
+        "cost_regret": 356100.0,
+        "metrics": {
+          "roc_auc": 0.9346227621483376,
+          "pr_auc": 0.4528017758156835,
+          "recall_at_p50": 0.4264705882352941,
+          "recall_at_p80": 0.07352941176470588,
+          "log_loss": 0.0918296196880186,
+          "brier": 0.025103213233112775,
+          "positive_rate": 0.034,
+          "n_rows": 2000.0
+        },
+        "degenerate": false,
+        "degenerate_reason": null
+      },
+      {
+        "model_id": "baseline_majority-f3b1b5f6",
+        "model_name": "Baseline (predict prior)",
+        "operating_point": 0.018000000000000002,
+        "operating_point_kind": "threshold",
+        "total_cost": 3032400.0,
+        "cost_per_asset_year": 15162000.0,
+        "cost_regret": 1922700.0,
+        "metrics": {
+          "roc_auc": 0.5,
+          "pr_auc": 0.034,
+          "recall_at_p50": 0.0,
+          "recall_at_p80": 0.0,
+          "log_loss": 0.1483827641059923,
+          "brier": 0.03284400044752066,
+          "positive_rate": 0.034,
+          "n_rows": 2000.0
+        },
+        "degenerate": true,
+        "degenerate_reason": "The cost-optimal policy saves nothing against inspecting everything (INR 3,032,400 either way). At a consequence ratio of 43:1, a blanket inspection policy is already optimal and the model changes nothing."
+      }
+    ],
+    "currency": "INR",
+    "elapsed_ms": 15.80141601152718,
+    "baselines": {
+      "baselines": [
+        {
+          "key": "run_to_failure",
+          "name": "Run to failure",
+          "description": "Never intervene; absorb every failure.",
+          "total_cost": 3536000.0,
+          "cost_per_asset_year": 17680000.0,
+          "detail": {}
+        },
+        {
+          "key": "fixed_interval",
+          "name": "Fixed interval (every 1)",
+          "description": "Preventive maintenance every 1 cycles, with the interval itself optimised against these same costs.",
+          "total_cost": 3032400.0,
+          "cost_per_asset_year": 15162000.0,
+          "detail": {
+            "k": 1
+          }
+        },
+        {
+          "key": "model_at_0.5",
+          "name": "Model at 0.5",
+          "description": "The same model, using the default 0.5 probability cut-off.",
+          "total_cost": 1464600.0,
+          "cost_per_asset_year": 7323000.0,
+          "detail": {
+            "threshold": 0.5
+          }
+        },
+        {
+          "key": "kairos",
+          "name": "Kairos",
+          "description": "The same model at its cost-optimal threshold (0.013).",
+          "total_cost": 1109700.0,
+          "cost_per_asset_year": 5548500.0,
+          "detail": {
+            "threshold": 0.012523277498331358
+          }
+        }
+      ],
+      "best": "kairos",
+      "kairos_wins": true,
+      "savings_vs_best_alternative": 354900.0,
+      "savings_per_asset_year": 1774500.0,
+      "verdict": "Kairos is the cheapest policy tested, saving INR 1,774,500 per asset per year against the next best alternative (Model at 0.5).",
+      "currency": "INR"
+    }
+  }
+}

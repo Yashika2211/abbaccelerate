@@ -60,6 +60,11 @@ def node_report(state: KairosState) -> dict[str, Any]:
         except Exception:  # noqa: BLE001
             pass
 
+        from kairos.agent import persistence
+
+        persisted = persistence.save(run_id, store)
+        impact["artifacts_persisted"] = persisted
+
         box["summary"] = impact.get("verdict", f"Champion: {winner.model_name}.")
         box["reasoning"] = impact.get("annualisation_note")
         box["payload"] = impact

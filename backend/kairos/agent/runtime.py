@@ -46,8 +46,23 @@ class RunArtifacts:
 _ARTIFACTS: dict[str, RunArtifacts] = {}
 
 
-def artifacts(run_id: str) -> RunArtifacts:
-    return _ARTIFACTS.setdefault(run_id, RunArtifacts())
+def artifacts(run_id: str, rehydrate: bool = True) -> RunArtifacts:
+    """The cache entry for a run, rebuilt from disk on a cold miss.
+
+    Without the rehydrate step, restarting the API turns every finished run's
+    cost curve and SHAP ranking into an empty state — and ``make seed`` would
+    produce a demo that evaporates on the next boot.
+    """
+    store = _ARTIFACTS.get(run_id)
+    if store is not None:
+        return store
+    store = RunArtifacts()
+    _ARTIFACTS[run_id] = store
+    if rehydrate:
+        from kairos.agent import persistence
+
+        persistence.load(run_id, store)
+    return store
 
 
 def clear_artifacts(run_id: str) -> None:
