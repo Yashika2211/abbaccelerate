@@ -86,8 +86,8 @@ export default function Leaderboard() {
           <table className="w-full text-xs">
             <thead className="text-muted border-edge border-b">
               <tr className="text-left">
-                <th className="pb-2 font-medium">#</th>
-                <th className="pb-2 font-medium">Model</th>
+                <th className="w-8 pb-2 pr-3 font-medium">#</th>
+                <th className="pb-2 pr-4 font-medium">Model</th>
                 <th className="pb-2 text-right font-medium">
                   {isThreshold ? "Threshold" : "Lead time"}
                 </th>
@@ -102,8 +102,8 @@ export default function Leaderboard() {
                   key={row.model_id}
                   className={`border-edge/60 border-b last:border-0 ${i === 0 ? "bg-signal/5" : ""}`}
                 >
-                  <td className="py-2 tabular-nums">{i + 1}</td>
-                  <td className="py-2">
+                  <td className="text-muted py-2 pr-3 align-top tabular-nums">{i + 1}</td>
+                  <td className="py-2 pr-4 align-top">
                     <span className="font-medium">{row.model_name}</span>
                     {i === 0 && (
                       <span className="ml-2">
@@ -121,20 +121,20 @@ export default function Leaderboard() {
                       </p>
                     )}
                   </td>
-                  <td className="py-2 text-right tabular-nums">
+                  <td className="py-2 text-right align-top tabular-nums">
                     {isThreshold
                       ? row.operating_point.toFixed(3)
                       : `${row.operating_point.toFixed(0)} cyc`}
                   </td>
-                  <td className="py-2 text-right tabular-nums">
+                  <td className="py-2 text-right align-top font-medium tabular-nums">
                     {money(row.cost_per_asset_year, currency)}
                   </td>
                   <td
-                    className={`py-2 text-right tabular-nums ${row.cost_regret > 0 ? "text-alarm" : "text-muted"}`}
+                    className={`py-2 text-right align-top tabular-nums ${row.cost_regret > 0 ? "text-alarm" : "text-muted"}`}
                   >
                     {row.cost_regret > 0 ? `+${money(row.cost_regret, currency)}` : "—"}
                   </td>
-                  <td className="py-2 text-right tabular-nums">
+                  <td className="py-2 text-right align-top tabular-nums">
                     {num(row.metrics[metricKey], isThreshold ? 4 : 3)}
                   </td>
                 </tr>
